@@ -1,18 +1,21 @@
 // https://stripe.com/docs/payments/without-card-authentication
-const stripe = require("stripe")("API_KEY")
+const stripe = require("stripe")(process.env.STRIPE_KEY)
 
-exports.handler = async event => {
-  if (!event.body || event.httpMethod !== "POST") {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({
-        status: "invalid http method",
-      }),
-    }
+module.exports = async (req, res) => {
+  if (req.method !== "POST") {
+    res.status(400);
+    res.json({
+      error: { code: 'INVALID_METHOD', message: "Only POST method is allowed" }
+    });
+    return;
   }
 
-  const order = JSON.parse(event.body)
+  const order = req.body;
+  console.log(order);
+  // FIXME: the payload should be validated against a JSON schema
+  // Otherwise, if clients send the wrong types or miss fields,
+  // they will have a hard time understanding why this function
+  // doesn't work correctly
 
   const calculateOrderAmount = items => {
     // Replace this constant with a calculation of the order's amount
@@ -46,11 +49,20 @@ exports.handler = async event => {
       })
       // Handle post-payment fulfillment
       console.log(`Created Payment: ${intent.id} for Customer: ${customer.id}`)
+
       // Now ship those goodies
-      await inventoryAPI.ship(order)
+      // await inventoryAPI.ship(order)
+
+      res.status(200);
+      res.json({ ok: true });
     } else {
+      const message = "Unexpected status " + intent.status;
+
       // Any other status would be unexpected, so error
-      console.log({ error: "Unexpected status " + intent.status })
+      console.log({ error: message })
+
+      res.status(500);
+      res.json({ error: { code: 'PAYMENT_ERROR', message } });
     }
   } catch (e) {
     if (e.type === "StripeCardError") {
@@ -60,5 +72,8 @@ exports.handler = async event => {
       // Something else happened
       console.log({ error: e.type })
     }
+
+    res.status(500);
+    res.json({ error: { code: e.type, message: e.message } });
   }
 }

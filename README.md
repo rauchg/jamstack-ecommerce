@@ -144,6 +144,10 @@ await Promise.all(
 
 #### Server-side processing of payments
 
-To see an example of how to process payments server-side with stripe, check out the [Lambda function in the snippets folder](https://github.com/jamstack-cms/jamstack-ecommerce/blob/master/snippets/lambda.js).
+Alongside Gatsby, we deploy a function called `/api`, which can be 
+used to submit a payment.
+
+The original codebase doesn't [yet make the request](https://github.com/jamstack-cms/jamstack-ecommerce/blob/88a2d489af4204d11d8612b4fb3c24a14321c030/src/pages/checkout.js#L114) to process the payment,
+but it should be easy to add with `fetch`.
 
 Also, consider verifying totals by passing in an array of IDs into the function, calculating the total on the server, then comparing the totals to check and make sure they match.
